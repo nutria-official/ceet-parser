@@ -1,8 +1,5 @@
 #include "parser.h"
 #include "math.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
 
 #define MAX_INPUT_LENGTH 128
 
@@ -19,65 +16,71 @@ int main () {
       size++;
     }
   }
-  int output = parser(input, size);
-  printf("result: %d", output);
+  float output = parser(input, size);
+  printf("result: %lf", output);
   return 1;
 }
 
-int parser(char* input, int size) {
-  Token* shrinked_input = shrink_input(input, size);
+float parser(char* input, int size) {
+  Token* tokenized_input = shrink_input(input, size);
   printf("\n");
   for (int i = 0; i < shrinked_size; i++) {
-    if (shrinked_input[i].type == character) {
-      printf("%c", shrinked_input[i].character);
+    if (tokenized_input[i].type == character) {
+      printf("%c", tokenized_input[i].character);
     } else {
-      printf("%d", shrinked_input[i].number);
+      printf("%lf", tokenized_input[i].number);
     }
   }
   printf("\n");
+
+   
+
   return 1;
 }
 
 Token* shrink_input(char* input, int size) {
-  bool previous_was_int = false; // Tokenize numbers;
+  bool previous_was_num = false; // Tokenize numbers;
   for (int i = 0; i < size; i++) {
     if (input[i] == '\n' || input[i] == '\0' || input[i] == ' ') {
-      previous_was_int = false;
+      previous_was_num = false;
     } else {
-      if (input[i] >= '0' && input[i] <= '9') {
-        if(!previous_was_int) {
+      if ((input[i] >= '0' && input[i] <= '9') || input[i] == '.') {
+        if(!previous_was_num) {
           shrinked_size++;
         }
-        previous_was_int = true;
+        previous_was_num = true;
       } else {
-        previous_was_int = false;
+        previous_was_num = false;
         shrinked_size++;
       }
     }
   }
 
   int radix = 0;
-  Token *shrinked_input = calloc(shrinked_size, sizeof(Token));
-  int index = shrinked_size; // Not minus one because we decrement index in the start.
+  Token *tokenized_input = calloc(shrinked_size, sizeof(Token));
+  int index = shrinked_size; // Not minus one because i decrement index in the start.
   for (int i = size; i >= 0; i--) { // -- because radix works that way;
     if (input[i] == '\n' || input[i] == '\0' || input[i] == ' ') {
       radix = 0;
     } else {
       if (input[i] >= '0' && input[i] <= '9') {
-        if (radix == 0) {
+        if (radix == 0 && input[i + 1] != '.') {
           index--;
         }
-        shrinked_input[index].number += (input[i] - 48) * power(10, radix); // 48 is the ASCII representation of '0';
-        shrinked_input[index].type = number;
+        tokenized_input[index].number += (input[i] - 48) * power(10, radix); // 48 is the ASCII representation of '0';
+        tokenized_input[index].type = number;
         radix++;
+      } else if (input[i] == '.' && index > 0) {
+        tokenized_input[index].number = tokenized_input[index].number / power(10, radix);
+        radix = 0;
       } else {
         radix = 0;
         index--;
-        shrinked_input[index].character = input[i];
-        shrinked_input[index].type = character;
+        tokenized_input[index].character = input[i];
+        tokenized_input[index].type = character;
       }
     }
   }
-  return shrinked_input;
+  return tokenized_input;
 }
 

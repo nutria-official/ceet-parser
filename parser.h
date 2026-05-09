@@ -1,6 +1,11 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+
 enum types {
   character,
   number,
@@ -9,10 +14,10 @@ enum types {
 typedef struct tokens {
   enum types type;
   char character;
-  int number;
+  float number;
 } Token;
 
-int parser(char* input, int size);
+float parser(char* input, int size);
 Token* shrink_input(char* input, int size);
 
 #endif
