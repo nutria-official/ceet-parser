@@ -3,6 +3,8 @@
 pkgs.mkShell {
   buildInputs = with pkgs; [
     clang
+    gcc
+    gdb
   ];
 
   shellHook = ''

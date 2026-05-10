@@ -3,11 +3,11 @@
 
 #define MAX_INPUT_LENGTH 128
 
-static int shrinked_size = 0;
+static int shrinked_size = 0; // The amount of tokens in parsed string.
 
 int main () {
   char input[MAX_INPUT_LENGTH];
-  fgets(input, MAX_INPUT_LENGTH, stdin);
+  if (fgets(input, MAX_INPUT_LENGTH, stdin) == NULL) perror("fgets was null\n");
   int size = 0;
   for (int i = 0; i < MAX_INPUT_LENGTH; i++) {
     if (input[i] == '\n' || input[i] == '\0') { // Takes input without newline.
@@ -17,7 +17,7 @@ int main () {
     }
   }
   float output = parser(input, size);
-  printf("result: %lf", output);
+  printf("result: %lf\n", output);
   return 1;
 }
 
@@ -33,8 +33,10 @@ float parser(char* input, int size) {
   }
   printf("\n");
 
-   
 
+  float output = evaluate(tokenized_input, shrinked_size);
+  free(tokenized_input);
+  printf("Result: %lf\n", output);
   return 1;
 }
 
@@ -57,14 +59,14 @@ Token* shrink_input(char* input, int size) {
   }
 
   int radix = 0;
-  Token *tokenized_input = calloc(shrinked_size, sizeof(Token));
+  Token *tokenized_input = calloc(shrinked_size, sizeof(Token)); // Needs to be calloc because I'm doing arithmatic on the zeros.
   int index = shrinked_size; // Not minus one because i decrement index in the start.
-  for (int i = size; i >= 0; i--) { // -- because radix works that way;
+  for (int i = size; i >= 0; i--) { // -- because radix works that way: The rightest decimal in a number is always radix 0, so i know the radix of all the upcoming decimals when itarating from the back;
     if (input[i] == '\n' || input[i] == '\0' || input[i] == ' ') {
       radix = 0;
     } else {
       if (input[i] >= '0' && input[i] <= '9') {
-        if (radix == 0 && input[i + 1] != '.') {
+        if (radix == 0 && input[i + 1] != '.') { // Am i lowkey reading out of memory here?
           index--;
         }
         tokenized_input[index].number += (input[i] - 48) * power(10, radix); // 48 is the ASCII representation of '0';
@@ -82,5 +84,112 @@ Token* shrink_input(char* input, int size) {
     }
   }
   return tokenized_input;
+}
+
+float evaluate(Token* input, int size) {
+  Token* calc_input = malloc((size - 2) * sizeof(Token)); // -3 because that for each operation 2 floats and one operator disapears.
+  if (calc_input == NULL) {
+    perror("Not enough available memory.\n");
+    return 0;
+  }
+
+  float val_a = input[size - 1].number;
+  float val_b = input[size - 1].number;
+  char operator = '+';
+  int operator_index = 10;
+
+  bool previous_was_operator = false;
+  bool first_operator = false;
+
+  for (int i = size - 1; i >= 0; i--) {
+    if (input[i].type == number) {
+
+      if (i == size - 1) {
+        val_b = input[i].number; 
+      }
+      if (previous_was_operator) {
+        val_b = val_a;
+        val_a = input[i].number;
+      }
+      previous_was_operator = false;
+    }
+    else
+    {
+      previous_was_operator = true;
+
+      if (first_operator) {
+        operator = input[i].character;
+        operator_index = i;
+        first_operator = false;
+      }
+      switch (operator) {
+        case '+':
+          if (input[i].character == '-' || input[i].character == '*' || input[i].character == '/') {
+            operator = input[i].character;
+            operator_index = i;
+          }
+          break;
+        case '-':
+          if (input[i].character == '*' || input[i].character == '/') {
+            operator = input[i].character;
+            operator_index = i;
+          }
+          break;
+        case '*':
+          if (input[i].character == '/') {
+            operator = input[i].character;
+            operator_index = i;
+          }
+          break;
+        case '/':
+          if (input[i].character == '/') {
+            operator = input[i].character;
+            operator_index = i;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }
+  
+  float result = 0;
+
+  switch (operator) {
+    case '+':
+      result = val_a + val_b;
+      break;
+    case '-': 
+      result = val_a - val_b;
+      break;
+    case '*':
+      result = val_a * val_b;
+      break;
+    case '/':
+      result = val_a / val_b;
+      break;
+    default:
+      break;
+  }
+  
+  for (int i = 0; i < size - 2; i++) {
+    int offset = 0; // For skipping the indexes.
+    if (i == operator_index - 1) {
+      calc_input[i].type = number;
+      calc_input[i].number = result;
+      offset++;
+    }
+    calc_input[i] = input[i + offset];
+  }
+
+  printf("Result: %lf\n", result);
+
+  if (size <= 3) {
+    free(calc_input);
+    return result;
+  }
+  float new_result = evaluate(calc_input, size - 2);
+  free(calc_input);
+  return new_result;
 }
 

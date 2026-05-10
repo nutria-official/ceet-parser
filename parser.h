@@ -19,5 +19,6 @@ typedef struct tokens {
 
 float parser(char* input, int size);
 Token* shrink_input(char* input, int size);
+float evaluate(Token* input, int size);
 
 #endif
