@@ -36,8 +36,7 @@ float parser(char* input, int size) {
 
   float output = evaluate(tokenized_input, shrinked_size);
   free(tokenized_input);
-  printf("Result: %lf\n", output);
-  return 1;
+  return output;
 }
 
 Token* shrink_input(char* input, int size) {
@@ -93,23 +92,25 @@ float evaluate(Token* input, int size) {
     return 0;
   }
 
-  float val_a = input[size - 1].number;
+  float val_a = 0;
   float val_b = input[size - 1].number;
   char operator = '+';
-  int operator_index = 10;
+  int operator_index = 0;
 
   bool previous_was_operator = false;
+  bool new_operator = true; // If a new pair of values should be selected do to a operator with higher priority.
   bool first_operator = false;
 
+  // Calculate result.
   for (int i = size - 1; i >= 0; i--) {
     if (input[i].type == number) {
-
-      if (i == size - 1) {
-        val_b = input[i].number; 
-      }
       if (previous_was_operator) {
-        val_b = val_a;
-        val_a = input[i].number;
+        if (new_operator) {
+          val_b = val_a;
+          val_a = input[i].number;
+        } else {
+          val_a = input[i].number;
+        }
       }
       previous_was_operator = false;
     }
@@ -121,33 +122,47 @@ float evaluate(Token* input, int size) {
         operator = input[i].character;
         operator_index = i;
         first_operator = false;
+        new_operator = true;
       }
       switch (operator) {
         case '+':
-          if (input[i].character == '-' || input[i].character == '*' || input[i].character == '/') {
+          if (input[i].character == '+' || input[i].character == '-' || input[i].character == '*' || input[i].character == '/') {
             operator = input[i].character;
             operator_index = i;
+            new_operator = true;
+          } else {
+            new_operator = false;
           }
           break;
         case '-':
-          if (input[i].character == '*' || input[i].character == '/') {
+          if (input[i].character == '-' || input[i].character == '*' || input[i].character == '/') {
             operator = input[i].character;
             operator_index = i;
+            new_operator = true;
+          } else {
+            new_operator = false;
           }
           break;
         case '*':
-          if (input[i].character == '/') {
+          if (input[i].character == '*' || input[i].character == '/') {
             operator = input[i].character;
             operator_index = i;
+            new_operator = true;
+          } else {
+            new_operator = false;
           }
           break;
         case '/':
           if (input[i].character == '/') {
             operator = input[i].character;
             operator_index = i;
+            new_operator = true;
+          } else {
+            new_operator = false;
           }
           break;
         default:
+          printf("This should not happen.\n");
           break;
       }
     }
@@ -169,20 +184,31 @@ float evaluate(Token* input, int size) {
       result = val_a / val_b;
       break;
     default:
+      printf("This should also not happen.\n");
       break;
   }
   
+  printf("val_a: %lf\n", val_a);
+  printf("val_b: %lf\n", val_b);
+  printf("Result: %lf\n", result);
+
+  int offset = 0; // For skipping the indexes.
   for (int i = 0; i < size - 2; i++) {
-    int offset = 0; // For skipping the indexes.
     if (i == operator_index - 1) {
       calc_input[i].type = number;
       calc_input[i].number = result;
-      offset++;
-    }
+      offset = 2;
+    } else {
     calc_input[i] = input[i + offset];
+    }
+  }
+  for (int i = 0; i < size - 2; i++) {
+    printf("calc_input[%d].number : %lf\n", i, calc_input[i].number);
   }
 
-  printf("Result: %lf\n", result);
+  for (int i = 0; i < size; i++) {
+    printf("input[%d].number: %lf\n", i, input[i].number);
+  }
 
   if (size <= 3) {
     free(calc_input);
