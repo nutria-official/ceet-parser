@@ -92,7 +92,7 @@ float evaluate(Token* input, int size) {
     return 0;
   }
 
-  float val_a = 0;
+  float val_a = input[size - 1].number;
   float val_b = input[size - 1].number;
   char operator = '+';
   int operator_index = 0;
@@ -107,8 +107,6 @@ float evaluate(Token* input, int size) {
       if (previous_was_operator) {
         if (new_operator) {
           val_b = val_a;
-          val_a = input[i].number;
-        } else {
           val_a = input[i].number;
         }
       }
