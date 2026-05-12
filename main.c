@@ -60,25 +60,29 @@ Token* shrink_input(char* input, int size) {
   int radix = 0;
   Token *tokenized_input = calloc(shrinked_size, sizeof(Token)); // Needs to be calloc because I'm doing arithmatic on the zeros.
   int index = shrinked_size; // Not minus one because i decrement index in the start.
-  for (int i = size; i >= 0; i--) { // -- because radix works that way: The rightest decimal in a number is always radix 0, so i know the radix of all the upcoming decimals when itarating from the back;
+  bool previous_was_dot = false;
+  for (int i = size - 1; i >= 0; i--) { // -- because radix works that way: The rightest decimal in a number is always radix 0, so i know the radix of all the upcoming decimals when itarating from the back;
     if (input[i] == '\n' || input[i] == '\0' || input[i] == ' ') {
       radix = 0;
     } else {
       if (input[i] >= '0' && input[i] <= '9') {
-        if (radix == 0 && input[i + 1] != '.') { // Am i lowkey reading out of memory here?
+        if (radix == 0 && !previous_was_dot) {
           index--;
+          previous_was_dot = false;
         }
         tokenized_input[index].number += (input[i] - 48) * power(10, radix); // 48 is the ASCII representation of '0';
         tokenized_input[index].type = number;
         radix++;
-      } else if (input[i] == '.' && index > 0) {
-        tokenized_input[index].number = tokenized_input[index].number / power(10, radix);
+      } else if (input[i] == '.') {
+        tokenized_input[index].number /= power(10, radix);
         radix = 0;
+        previous_was_dot = true;
       } else {
         radix = 0;
         index--;
         tokenized_input[index].character = input[i];
         tokenized_input[index].type = character;
+        previous_was_dot = false;
       }
     }
   }
